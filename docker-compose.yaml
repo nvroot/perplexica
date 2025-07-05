@@ -1,35 +1,44 @@
 services:
   searxng:
-    image: docker.io/searxng/searxng:latest
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    container_name: searxng
     volumes:
       - ./searxng:/etc/searxng:rw
-    ports:
-      - 4000:8080
+    expose:
+      - 8080
     networks:
       - perplexica-network
-    restart: unless-stopped
-
-  app:
-    image: itzcrazykns1337/perplexica:main
+    healthcheck:
+      test: ['CMD-SHELL', 'pgrep -f searxng']
+      <<: *default-healthcheck
+  perplexica:
+    image: nvroot/perplexica:main
     build:
       context: .
       dockerfile: app.dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://${DOMAIN}/api
+        - NEXT_PUBLIC_WS_URL=wss://${DOMAIN}/api
+    restart: unless-stopped
+    container_name: perplexica
     environment:
       - SEARXNG_API_URL=http://searxng:8080
       - DATA_DIR=/home/perplexica
-    ports:
-      - 3000:3000
+    expose:
+      - 3000
     networks:
       - perplexica-network
+      - proxy
     volumes:
       - backend-dbstore:/home/perplexica/data
       - uploads:/home/perplexica/uploads
       - ./config.toml:/home/perplexica/config.toml
-    restart: unless-stopped
 
 networks:
   perplexica-network:
-
+  proxy:
+    external: true
 volumes:
   backend-dbstore:
   uploads:
