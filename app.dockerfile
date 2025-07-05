@@ -1,5 +1,8 @@
 FROM node:20.18.0-slim AS builder
 
+ENV NEXT_PUBLIC_API_URL=https://${DOMAIN}
+ENV NEXT_PUBLIC_WS_URL=wss://${DOMAIN}
+
 WORKDIR /home/perplexica
 
 COPY package.json yarn.lock ./
